@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMU Lesson Segment Review — 9,164 Segments</title>
+<style>
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface2: #334155;
+  --border: #475569;
+  --text: #f1f5f9;
+  --text-dim: #94a3b8;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --green: #22c55e;
+  --orange: #f59e0b;
+  --red: #ef4444;
+  --purple: #a78bfa;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header h1 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.header .subtitle {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+.stats-bar {
+  display: flex;
+  gap: 24px;
+  padding: 12px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+.stat { color: var(--text-dim); }
+.stat strong { color: var(--accent); font-size: 16px; }
+.controls {
+  padding: 16px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.search-box {
+  flex: 1;
+  min-width: 280px;
+  position: relative;
+}
+.search-box input {
+  width: 100%;
+  padding: 10px 14px 10px 36px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+}
+.search-box input:focus { border-color: var(--accent); }
+.search-box::before {
+  content: '🔍';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+}
+select {
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  min-width: 140px;
+  cursor: pointer;
+}
+select:focus { border-color: var(--accent); }
+.filter-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  display: block;
+  margin-bottom: 4px;
+}
+.filter-group { display: flex; flex-direction: column; }
+.clear-btn {
+  padding: 10px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  align-self: flex-end;
+}
+.clear-btn:hover { background: var(--border); }
+.results-info {
+  padding: 8px 24px;
+  font-size: 12px;
+  color: var(--text-dim);
+  background: var(--bg);
+  border-bottom: 1px solid rgba(71,85,105,0.3);
+}
+.main {
+  padding: 0;
+}
+.segment-list {
+  padding: 0 24px 24px;
+}
+.segment-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-top: 12px;
+  transition: border-color 0.15s;
+}
+.segment-card:hover { border-color: var(--accent); }
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+.play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.play-btn:hover { background: var(--accent-hover); }
+.card-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.card-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.badge-teaching { background: rgba(59,130,246,0.15); color: var(--accent); }
+.badge-discussion { background: rgba(162,139,250,0.15); color: var(--purple); }
+.badge-case_study { background: rgba(245,158,11,0.15); color: var(--orange); }
+.badge-introduction { background: rgba(34,197,94,0.15); color: var(--green); }
+.badge-demonstration { background: rgba(239,68,68,0.15); color: var(--red); }
+.badge-summary { background: rgba(148,163,184,0.15); color: var(--text-dim); }
+.badge-prayer_reflection { background: rgba(245,158,11,0.15); color: var(--orange); }
+.badge-reflection { background: rgba(162,139,250,0.15); color: var(--purple); }
+.card-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(59,130,246,0.08);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--accent-hover);
+}
+.tag-skill {
+  background: rgba(34,197,94,0.08);
+  border-color: rgba(34,197,94,0.2);
+  color: var(--green);
+}
+.tag-person {
+  background: rgba(162,139,250,0.08);
+  border-color: rgba(162,139,250,0.2);
+  color: var(--purple);
+}
+.card-row {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+.card-row strong { color: var(--text); font-weight: 500; }
+.load-more {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  margin-top: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.load-more:hover { background: var(--surface2); }
+.no-results {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+}
+.no-results h3 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--surface);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+}
+.modal-close {
+  float: right;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 24px;
+  cursor: pointer;
+}
+.modal-close:hover { color: var(--text); }
+.modal h2 { font-size: 18px; margin-bottom: 16px; padding-right: 40px; }
+.modal-video {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: black;
+}
+.modal-details { font-size: 13px; color: var(--text-dim); line-height: 1.8; }
+.modal-details strong { color: var(--text); }
+/* Responsive */
+@media (max-width: 768px) {
+  .controls { flex-direction: column; }
+  .search-box { min-width: 100%; }
+  .card-header { flex-direction: column; }
+  .card-meta { flex-direction: column; gap: 4px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>DMU Lesson Segment Index</h1>
+  <div class="subtitle">Divine Mercy University — 9,164 teaching segments from 1,950 instructional recordings</div>
+</div>
+
+<div class="stats-bar" id="stats-bar">
+  <div class="stat"><strong id="stat-total">9,164</strong> segments</div>
+  <div class="stat"><strong id="stat-assets">1,950</strong> recordings</div>
+  <div class="stat"><strong id="stat-teaching">0</strong> teaching</div>
+  <div class="stat"><strong id="stat-discussion">0</strong> discussion</div>
+  <div class="stat"><strong id="stat-case">0</strong> case studies</div>
+  <div class="stat"><strong id="stat-authors">0</strong> authors</div>
+  <div class="stat"><strong id="stat-series">0</strong> series</div>
+</div>
+
+<div class="controls">
+  <div class="search-box">
+    <input type="text" id="search" placeholder="Search topics, skills, concepts, people, descriptions..." autocomplete="off">
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Segment Type</span>
+    <select id="filter-type">
+      <option value="">All Types</option>
+      <option value="teaching">Teaching</option>
+      <option value="discussion">Discussion</option>
+      <option value="case_study">Case Study</option>
+      <option value="introduction">Introduction</option>
+      <option value="demonstration">Demonstration</option>
+      <option value="summary">Summary</option>
+      <option value="prayer_reflection">Prayer/Reflection</option>
+      <option value="reflection">Reflection</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Content Type</span>
+    <select id="filter-content">
+      <option value="">All Content</option>
+      <option value="lecture">Lecture</option>
+      <option value="panel_discussion">Panel Discussion</option>
+      <option value="interview">Interview</option>
+      <option value="workshop">Workshop</option>
+      <option value="practicum">Practicum</option>
+      <option value="tutorial">Tutorial</option>
+      <option value="testimony">Testimony</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Author</span>
+    <select id="filter-author">
+      <option value="">All Authors</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Series</span>
+    <select id="filter-series">
+      <option value="">All Series</option>
+    </select>
+  </div>
+  <button class="clear-btn" onclick="clearFilters()">Clear All</button>
+</div>
+
+<div class="results-info" id="results-info">Loading segments...</div>
+
+<div class="main">
+  <div class="segment-list" id="segment-list"></div>
+</div>
+
+<!-- Video Modal -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <h2 id="modal-title"></h2>
+    <iframe id="modal-video" class="modal-video" frameborder="0" allowfullscreen allow="autoplay; fullscreen"></iframe>
+    <div class="modal-details" id="modal-details"></div>
+  </div>
+</div>
+
+<!-- Data loaded from companion file -->
+<script src="segments_data.js"></script>
+<script>
+// SEGMENTS is loaded from segments_data.js as a global const
+let filtered = [];
+let displayCount = 50;
+const PAGE_SIZE = 50;
+
+// Build filter options on load
+function init() {
+  // Count authors and series by segment count
+  const authorCounts = {};
+  const seriesCounts = {};
+  let teachingCount = 0, discussionCount = 0, caseCount = 0;
+
+  SEGMENTS.forEach(s => {
+    if (s.a) authorCounts[s.a] = (authorCounts[s.a] || 0) + 1;
+    if (s.sr) seriesCounts[s.sr] = (seriesCounts[s.sr] || 0) + 1;
+    if (s.st === 'teaching') teachingCount++;
+    if (s.st === 'discussion') discussionCount++;
+    if (s.st === 'case_study') caseCount++;
+  });
+
+  // Sort by count descending
+  const sortedAuthors = Object.entries(authorCounts).sort((a, b) => b[1] - a[1]);
+  const sortedSeries = Object.entries(seriesCounts).sort((a, b) => b[1] - a[1]);
+
+  // Populate author dropdown (top 100)
+  const authorSel = document.getElementById('filter-author');
+  sortedAuthors.slice(0, 100).forEach(([name, count]) => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = `${name} (${count})`;
+    authorSel.appendChild(opt);
+  });
+
+  // Populate series dropdown (top 100)
+  const seriesSel = document.getElementById('filter-series');
+  sortedSeries.slice(0, 100).forEach(([name, count]) => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = `${name} (${count})`;
+    seriesSel.appendChild(opt);
+  });
+
+  // Stats
+  document.getElementById('stat-total').textContent = SEGMENTS.length.toLocaleString();
+  document.getElementById('stat-assets').textContent = new Set(SEGMENTS.map(s => s.ai)).size.toLocaleString();
+  document.getElementById('stat-teaching').textContent = teachingCount.toLocaleString();
+  document.getElementById('stat-discussion').textContent = discussionCount.toLocaleString();
+  document.getElementById('stat-case').textContent = caseCount.toLocaleString();
+  document.getElementById('stat-authors').textContent = Object.keys(authorCounts).length.toLocaleString();
+  document.getElementById('stat-series').textContent = Object.keys(seriesCounts).length.toLocaleString();
+
+  applyFilters();
+}
+
+function applyFilters() {
+  const query = document.getElementById('search').value.toLowerCase().trim();
+  const typeFilter = document.getElementById('filter-type').value;
+  const contentFilter = document.getElementById('filter-content').value;
+  const authorFilter = document.getElementById('filter-author').value;
+  const seriesFilter = document.getElementById('filter-series').value;
+
+  const queryTerms = query ? query.split(/\s+/) : [];
+
+  filtered = SEGMENTS.filter(s => {
+    if (typeFilter && s.st !== typeFilter) return false;
+    if (contentFilter && s.ct !== contentFilter) return false;
+    if (authorFilter && s.a !== authorFilter) return false;
+    if (seriesFilter && s.sr !== seriesFilter) return false;
+
+    if (queryTerms.length > 0) {
+      const searchable = (
+        s.t + ' ' + s.d + ' ' + s.sk + ' ' + s.c + ' ' + s.pr + ' ' + s.sa + ' ' + s.a + ' ' + s.sr
+      ).toLowerCase();
+      return queryTerms.every(term => searchable.includes(term));
+    }
+    return true;
+  });
+
+  displayCount = PAGE_SIZE;
+  renderResults();
+}
+
+function renderResults() {
+  const list = document.getElementById('segment-list');
+  const info = document.getElementById('results-info');
+
+  info.textContent = `Showing ${Math.min(displayCount, filtered.length).toLocaleString()} of ${filtered.length.toLocaleString()} segments`;
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="no-results"><h3>No segments match your filters</h3><p>Try broadening your search or clearing filters.</p></div>';
+    return;
+  }
+
+  const visible = filtered.slice(0, displayCount);
+  let html = '';
+
+  visible.forEach((s, i) => {
+    const badgeClass = 'badge-' + (s.st || 'teaching');
+    const skills = s.sk ? s.sk.split(';').map(x => x.trim()).filter(Boolean) : [];
+    const concepts = s.c ? s.c.split(';').map(x => x.trim()).filter(Boolean) : [];
+    const people = s.pr ? s.pr.split(';').map(x => x.trim()).filter(Boolean) : [];
+
+    html += `
+    <div class="segment-card">
+      <div class="card-header">
+        <div class="card-title">${esc(s.t)}</div>
+        <a class="play-btn" href="${esc(s.u)}" target="_blank" onclick="event.preventDefault(); openModal(${i})">&#9654; Play</a>
+      </div>
+      <div class="card-meta">
+        <span class="badge ${badgeClass}">${esc(s.st || 'teaching')}</span>
+        <span>&#128337; ${esc(s.s)} — ${esc(s.l)}</span>
+        <span>&#127891; ${esc(s.ct)}</span>
+        ${s.a && s.a !== 'Unknown' ? `<span>&#128100; ${esc(s.a)}</span>` : ''}
+        ${s.sr && s.sr !== 'Unknown' ? `<span>&#128218; ${esc(s.sr)}</span>` : ''}
+      </div>
+      <div class="card-desc">${esc(s.d)}</div>
+      <div class="card-tags">
+        ${skills.slice(0, 5).map(sk => `<span class="tag tag-skill">${esc(sk)}</span>`).join('')}
+        ${concepts.slice(0, 5).map(c => `<span class="tag">${esc(c)}</span>`).join('')}
+        ${people.slice(0, 3).map(p => `<span class="tag tag-person">${esc(p)}</span>`).join('')}
+      </div>
+      ${s.sa ? `<div class="card-row"><strong>Subject:</strong> ${esc(s.sa)}</div>` : ''}
+    </div>`;
+  });
+
+  if (displayCount < filtered.length) {
+    const remaining = filtered.length - displayCount;
+    html += `<button class="load-more" onclick="loadMore()">Load ${Math.min(PAGE_SIZE, remaining)} more (${remaining.toLocaleString()} remaining)</button>`;
+  }
+
+  list.innerHTML = html;
+}
+
+function loadMore() {
+  displayCount += PAGE_SIZE;
+  renderResults();
+}
+
+function clearFilters() {
+  document.getElementById('search').value = '';
+  document.getElementById('filter-type').value = '';
+  document.getElementById('filter-content').value = '';
+  document.getElementById('filter-author').value = '';
+  document.getElementById('filter-series').value = '';
+  applyFilters();
+}
+
+function openModal(idx) {
+  const s = filtered[idx];
+  document.getElementById('modal-title').textContent = s.t;
+
+  // Extract time offset from stream URL
+  const timeMatch = s.u.match(/#t=(\d+)/);
+  const startSec = timeMatch ? parseInt(timeMatch[1]) : 0;
+
+  // Use Mux iframe embed
+  const iframe = document.getElementById('modal-video');
+  iframe.src = `https://stream.mux.com/${s.p}#t=${startSec}`;
+
+  const skills = s.sk ? s.sk.split(';').map(x => x.trim()).filter(Boolean) : [];
+  const concepts = s.c ? s.c.split(';').map(x => x.trim()).filter(Boolean) : [];
+  const people = s.pr ? s.pr.split(';').map(x => x.trim()).filter(Boolean) : [];
+
+  let details = `
+    <p><strong>Start:</strong> ${esc(s.s)} &nbsp; <strong>Length:</strong> ${esc(s.l)} &nbsp; <strong>Ends:</strong> ${esc(s.e)}</p>
+    <p><strong>Type:</strong> ${esc(s.st)} &nbsp; <strong>Content:</strong> ${esc(s.ct)}</p>
+    ${s.a ? `<p><strong>Author:</strong> ${esc(s.a)}</p>` : ''}
+    ${s.sr ? `<p><strong>Series:</strong> ${esc(s.sr)}</p>` : ''}
+    ${s.sa ? `<p><strong>Subject Area:</strong> ${esc(s.sa)}</p>` : ''}
+    <p><strong>Description:</strong> ${esc(s.d)}</p>
+    ${skills.length ? `<p><strong>Skills Taught:</strong> ${skills.map(x => esc(x)).join(', ')}</p>` : ''}
+    ${concepts.length ? `<p><strong>Concepts:</strong> ${concepts.map(x => esc(x)).join(', ')}</p>` : ''}
+    ${people.length ? `<p><strong>People Referenced:</strong> ${people.map(x => esc(x)).join(', ')}</p>` : ''}
+    <p><strong>Playback ID:</strong> <code>${esc(s.p)}</code></p>
+    <p><strong>Asset ID:</strong> <code>${esc(s.ai)}</code></p>
+    ${s.pt ? `<p><strong>Passthrough:</strong> ${esc(s.pt)}</p>` : ''}
+    <p><strong>Recording Duration:</strong> ${esc(s.rd)}</p>
+    <p><a href="${esc(s.u)}" target="_blank" style="color:var(--accent)">Open in Mux Player &rarr;</a></p>
+  `;
+  document.getElementById('modal-details').innerHTML = details;
+  document.getElementById('modal').classList.add('active');
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal')) return;
+  document.getElementById('modal').classList.remove('active');
+  document.getElementById('modal-video').src = '';
+}
+
+function esc(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// Debounced search
+let searchTimer;
+document.getElementById('search').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(applyFilters, 300);
+});
+document.getElementById('filter-type').addEventListener('change', applyFilters);
+document.getElementById('filter-content').addEventListener('change', applyFilters);
+document.getElementById('filter-author').addEventListener('change', applyFilters);
+document.getElementById('filter-series').addEventListener('change', applyFilters);
+
+// Keyboard shortcut: Escape closes modal
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
+
+// Initialize
+init();
+</script>
+</body>
+</html>
