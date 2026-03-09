@@ -315,6 +315,8 @@ select:focus { border-color: var(--accent); }
   <div class="stat"><strong id="stat-teaching">0</strong> teaching</div>
   <div class="stat"><strong id="stat-discussion">0</strong> discussion</div>
   <div class="stat"><strong id="stat-case">0</strong> case studies</div>
+  <div class="stat"><strong id="stat-video">0</strong> video</div>
+  <div class="stat"><strong id="stat-audio">0</strong> audio</div>
   <div class="stat"><strong id="stat-authors">0</strong> authors</div>
   <div class="stat"><strong id="stat-series">0</strong> series</div>
 </div>
@@ -357,6 +359,14 @@ select:focus { border-color: var(--accent); }
     </select>
   </div>
   <div class="filter-group">
+    <span class="filter-label">Media</span>
+    <select id="filter-media">
+      <option value="">All Media</option>
+      <option value="video">Video</option>
+      <option value="audio">Audio Only</option>
+    </select>
+  </div>
+  <div class="filter-group">
     <span class="filter-label">Series</span>
     <select id="filter-series">
       <option value="">All Series</option>
@@ -394,7 +404,7 @@ function init() {
   // Count authors and series by segment count
   const authorCounts = {};
   const seriesCounts = {};
-  let teachingCount = 0, discussionCount = 0, caseCount = 0;
+  let teachingCount = 0, discussionCount = 0, caseCount = 0, videoCount = 0, audioCount = 0;
 
   SEGMENTS.forEach(s => {
     if (s.a) authorCounts[s.a] = (authorCounts[s.a] || 0) + 1;
@@ -402,6 +412,7 @@ function init() {
     if (s.st === 'teaching') teachingCount++;
     if (s.st === 'discussion') discussionCount++;
     if (s.st === 'case_study') caseCount++;
+    if (s.ao) audioCount++; else videoCount++;
   });
 
   // Sort by count descending
@@ -432,6 +443,8 @@ function init() {
   document.getElementById('stat-teaching').textContent = teachingCount.toLocaleString();
   document.getElementById('stat-discussion').textContent = discussionCount.toLocaleString();
   document.getElementById('stat-case').textContent = caseCount.toLocaleString();
+  document.getElementById('stat-video').textContent = videoCount.toLocaleString();
+  document.getElementById('stat-audio').textContent = audioCount.toLocaleString();
   document.getElementById('stat-authors').textContent = Object.keys(authorCounts).length.toLocaleString();
   document.getElementById('stat-series').textContent = Object.keys(seriesCounts).length.toLocaleString();
 
@@ -443,6 +456,7 @@ function applyFilters() {
   const typeFilter = document.getElementById('filter-type').value;
   const contentFilter = document.getElementById('filter-content').value;
   const authorFilter = document.getElementById('filter-author').value;
+  const mediaFilter = document.getElementById('filter-media').value;
   const seriesFilter = document.getElementById('filter-series').value;
 
   const queryTerms = query ? query.split(/\s+/) : [];
@@ -451,6 +465,8 @@ function applyFilters() {
     if (typeFilter && s.st !== typeFilter) return false;
     if (contentFilter && s.ct !== contentFilter) return false;
     if (authorFilter && s.a !== authorFilter) return false;
+    if (mediaFilter === 'audio' && !s.ao) return false;
+    if (mediaFilter === 'video' && s.ao) return false;
     if (seriesFilter && s.sr !== seriesFilter) return false;
 
     if (queryTerms.length > 0) {
@@ -496,6 +512,7 @@ function renderResults() {
         <span class="badge ${badgeClass}">${esc(s.st || 'teaching')}</span>
         <span>&#128337; ${esc(s.s)} — ${esc(s.l)}</span>
         <span>&#127891; ${esc(s.ct)}</span>
+        <span>${s.ao ? '&#127911; Audio' : '&#127909; Video'}</span>
         ${s.a && s.a !== 'Unknown' ? `<span>&#128100; ${esc(s.a)}</span>` : ''}
         ${s.sr && s.sr !== 'Unknown' ? `<span>&#128218; ${esc(s.sr)}</span>` : ''}
       </div>
@@ -527,6 +544,7 @@ function clearFilters() {
   document.getElementById('filter-type').value = '';
   document.getElementById('filter-content').value = '';
   document.getElementById('filter-author').value = '';
+  document.getElementById('filter-media').value = '';
   document.getElementById('filter-series').value = '';
   applyFilters();
 }
@@ -589,6 +607,7 @@ document.getElementById('search').addEventListener('input', () => {
 document.getElementById('filter-type').addEventListener('change', applyFilters);
 document.getElementById('filter-content').addEventListener('change', applyFilters);
 document.getElementById('filter-author').addEventListener('change', applyFilters);
+document.getElementById('filter-media').addEventListener('change', applyFilters);
 document.getElementById('filter-series').addEventListener('change', applyFilters);
 
 // Keyboard shortcut: Escape closes modal
