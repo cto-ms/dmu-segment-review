@@ -204,6 +204,15 @@ select:focus { border-color: var(--accent); }
 .badge-prayer { background: rgba(245,158,11,0.15); color: var(--orange); }
 .badge-testimony { background: rgba(34,197,94,0.15); color: var(--green); }
 .badge-speech { background: rgba(59,130,246,0.15); color: var(--accent); }
+/* Audience badges */
+.badge-aud { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; letter-spacing: 0.2px; }
+.badge-aud-catholic { background: rgba(139,92,246,0.15); color: #a78bfa; }
+.badge-aud-christian { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.badge-aud-secular { background: rgba(148,163,184,0.15); color: #94a3b8; }
+.badge-aud-therapist { background: rgba(34,197,94,0.15); color: #22c55e; }
+.badge-aud-patient { background: rgba(245,158,11,0.15); color: #f59e0b; }
+/* Topic badge */
+.badge-topic { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 500; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.15); color: var(--accent-hover); }
 .card-desc {
   font-size: 13px;
   color: var(--text-dim);
@@ -374,6 +383,7 @@ document.addEventListener("DOMContentLoaded", function() {
   <div class="stat"><strong id="stat-audio">0</strong> audio</div>
   <div class="stat"><strong id="stat-authors">0</strong> authors</div>
   <div class="stat"><strong id="stat-series">0</strong> series</div>
+  <div class="stat"><strong id="stat-classified">0</strong> classified</div>
 </div>
 
 <div class="controls">
@@ -428,6 +438,18 @@ document.addEventListener("DOMContentLoaded", function() {
     </select>
   </div>
   <div class="filter-group">
+    <span class="filter-label">Audience</span>
+    <select id="filter-audience">
+      <option value="">All Audiences</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Topic</span>
+    <select id="filter-concern">
+      <option value="">All Topics</option>
+    </select>
+  </div>
+  <div class="filter-group">
     <span class="filter-label">Source</span>
     <select id="filter-source">
       <option value="">All Sources</option>
@@ -467,11 +489,15 @@ function init() {
   // Count authors and series by segment count
   const authorCounts = {};
   const seriesCounts = {};
+  const audienceCounts = {};
+  const concernCounts = {};
   let teachingCount = 0, discussionCount = 0, caseCount = 0, videoCount = 0, audioCount = 0;
 
   SEGMENTS.forEach(s => {
     if (s.a) authorCounts[s.a] = (authorCounts[s.a] || 0) + 1;
     if (s.sr) seriesCounts[s.sr] = (seriesCounts[s.sr] || 0) + 1;
+    if (s.ta) audienceCounts[s.ta] = (audienceCounts[s.ta] || 0) + 1;
+    if (s.pc && s.pc !== 'N/A') concernCounts[s.pc] = (concernCounts[s.pc] || 0) + 1;
     if (s.st === 'teaching') teachingCount++;
     if (s.st === 'discussion') discussionCount++;
     if (s.st === 'case_study') caseCount++;
@@ -500,6 +526,24 @@ function init() {
     seriesSel.appendChild(opt);
   });
 
+  // Populate audience dropdown
+  const audienceSel = document.getElementById('filter-audience');
+  Object.entries(audienceCounts).sort((a, b) => b[1] - a[1]).forEach(([name, count]) => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = `${name} (${count})`;
+    audienceSel.appendChild(opt);
+  });
+
+  // Populate concern dropdown
+  const concernSel = document.getElementById('filter-concern');
+  Object.entries(concernCounts).sort((a, b) => b[1] - a[1]).forEach(([name, count]) => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = `${name} (${count})`;
+    concernSel.appendChild(opt);
+  });
+
   // Stats
   document.getElementById('stat-total').textContent = SEGMENTS.length.toLocaleString();
   document.getElementById('stat-assets').textContent = new Set(SEGMENTS.map(s => s.ai)).size.toLocaleString();
@@ -510,6 +554,7 @@ function init() {
   document.getElementById('stat-audio').textContent = audioCount.toLocaleString();
   document.getElementById('stat-authors').textContent = Object.keys(authorCounts).length.toLocaleString();
   document.getElementById('stat-series').textContent = Object.keys(seriesCounts).length.toLocaleString();
+  document.getElementById('stat-classified').textContent = SEGMENTS.filter(s => s.ta && s.ta !== 'Unknown').length.toLocaleString();
 
   applyFilters();
 }
@@ -521,6 +566,8 @@ function applyFilters() {
   const authorFilter = document.getElementById('filter-author').value;
   const mediaFilter = document.getElementById('filter-media').value;
   const seriesFilter = document.getElementById('filter-series').value;
+  const audienceFilter = document.getElementById('filter-audience').value;
+  const concernFilter = document.getElementById('filter-concern').value;
 
   const queryTerms = query ? query.split(/\s+/) : [];
 
@@ -531,6 +578,8 @@ function applyFilters() {
     if (mediaFilter === 'audio' && !s.ao) return false;
     if (mediaFilter === 'video' && s.ao) return false;
     if (seriesFilter && s.sr !== seriesFilter) return false;
+    if (audienceFilter && s.ta !== audienceFilter) return false;
+    if (concernFilter && s.pc !== concernFilter) return false;
     const sourceFilter = document.getElementById('filter-source').value;
     if (sourceFilter && s.src !== sourceFilter) return false;
 
@@ -567,6 +616,8 @@ function renderResults() {
     const concepts = s.c ? s.c.split(';').map(x => x.trim()).filter(Boolean) : [];
     const people = s.pr ? s.pr.split(';').map(x => x.trim()).filter(Boolean) : [];
 
+    const audClass = s.ta ? 'badge-aud-' + s.ta.toLowerCase().split(' ')[0] : '';
+
     html += `
     <div class="segment-card">
       <div class="card-header">
@@ -575,6 +626,8 @@ function renderResults() {
       </div>
       <div class="card-meta">
         <span class="badge ${badgeClass}">${esc(s.st || 'teaching')}</span>${s.src === 'yt' ? '<span class="badge badge-src-yt">YT</span>' : ''}
+        ${s.ta && s.ta !== 'Unknown' ? `<span class="badge badge-aud ${audClass}">${esc(s.ta)}</span>` : ''}
+        ${s.pc && s.pc !== 'N/A' ? `<span class="badge badge-topic">${esc(s.pc)}</span>` : ''}
         <span>&#128337; ${esc(s.s)} — ${esc(s.l)}</span>
         <span>&#127891; ${esc(s.ct)}</span>
         <span>${s.ao ? '&#127911; Audio' : '&#127909; Video'}</span>
@@ -611,6 +664,8 @@ function clearFilters() {
   document.getElementById('filter-author').value = '';
   document.getElementById('filter-media').value = '';
   document.getElementById('filter-series').value = '';
+  document.getElementById('filter-audience').value = '';
+  document.getElementById('filter-concern').value = '';
   document.getElementById('filter-source').value = '';
   applyFilters();
 }
@@ -637,6 +692,8 @@ function openModal(idx) {
     ${s.a ? `<p><strong>Author:</strong> ${esc(s.a)}</p>` : ''}
     ${s.sr ? `<p><strong>Series:</strong> ${esc(s.sr)}</p>` : ''}
     ${s.sa ? `<p><strong>Subject Area:</strong> ${esc(s.sa)}</p>` : ''}
+    ${s.ta && s.ta !== 'Unknown' ? `<p><strong>Audience:</strong> ${esc(s.ta)}</p>` : ''}
+    ${s.pc && s.pc !== 'N/A' ? `<p><strong>Topic:</strong> ${esc(s.pc)}</p>` : ''}
     <p><strong>Description:</strong> ${esc(s.d)}</p>
     ${skills.length ? `<p><strong>Skills Taught:</strong> ${skills.map(x => esc(x)).join(', ')}</p>` : ''}
     ${concepts.length ? `<p><strong>Concepts:</strong> ${concepts.map(x => esc(x)).join(', ')}</p>` : ''}
@@ -676,6 +733,8 @@ document.getElementById('filter-content').addEventListener('change', applyFilter
 document.getElementById('filter-author').addEventListener('change', applyFilters);
 document.getElementById('filter-media').addEventListener('change', applyFilters);
 document.getElementById('filter-series').addEventListener('change', applyFilters);
+document.getElementById('filter-audience').addEventListener('change', applyFilters);
+document.getElementById('filter-concern').addEventListener('change', applyFilters);
 document.getElementById('filter-source').addEventListener('change', applyFilters);
 
 // Keyboard shortcut: Escape closes modal
