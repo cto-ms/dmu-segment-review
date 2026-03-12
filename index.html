@@ -197,8 +197,6 @@ select:focus { border-color: var(--accent); }
 .badge-summary { background: rgba(148,163,184,0.15); color: var(--text-dim); }
 .badge-prayer_reflection { background: rgba(245,158,11,0.15); color: var(--orange); }
 .badge-reflection { background: rgba(162,139,250,0.15); color: var(--purple); }
-.badge-src-yt { background: rgba(239,68,68,0.15); color: var(--red); font-size: 10px; margin-left: 4px; }
-.badge-src-mux { background: rgba(59,130,246,0.1); color: var(--accent); font-size: 10px; margin-left: 4px; }
 .badge-homily { background: rgba(245,158,11,0.15); color: var(--orange); }
 .badge-ceremony { background: rgba(162,139,250,0.15); color: var(--purple); }
 .badge-prayer { background: rgba(245,158,11,0.15); color: var(--orange); }
@@ -449,14 +447,6 @@ document.addEventListener("DOMContentLoaded", function() {
       <option value="">All Topics</option>
     </select>
   </div>
-  <div class="filter-group">
-    <span class="filter-label">Source</span>
-    <select id="filter-source">
-      <option value="">All Sources</option>
-      <option value="mux">Original Library (9,164)</option>
-      <option value="yt">YouTube-Origin Batch (586)</option>
-    </select>
-  </div>
   <button class="clear-btn" onclick="clearFilters()">Clear All</button>
 </div>
 
@@ -580,8 +570,6 @@ function applyFilters() {
     if (seriesFilter && s.sr !== seriesFilter) return false;
     if (audienceFilter && s.ta !== audienceFilter) return false;
     if (concernFilter && s.pc !== concernFilter) return false;
-    const sourceFilter = document.getElementById('filter-source').value;
-    if (sourceFilter && s.src !== sourceFilter) return false;
 
     if (queryTerms.length > 0) {
       const searchable = (
@@ -625,7 +613,7 @@ function renderResults() {
         <a class="play-btn" href="${esc(s.u)}" target="_blank" onclick="event.preventDefault(); openModal(${i})">&#9654; Play</a>
       </div>
       <div class="card-meta">
-        <span class="badge ${badgeClass}">${esc(s.st || 'teaching')}</span>${s.src === 'yt' ? '<span class="badge badge-src-yt">YT</span>' : ''}
+        <span class="badge ${badgeClass}">${esc(s.st || 'teaching')}</span>
         ${s.ta && s.ta !== 'Unknown' ? `<span class="badge badge-aud ${audClass}">${esc(s.ta)}</span>` : ''}
         ${s.pc && s.pc !== 'N/A' ? `<span class="badge badge-topic">${esc(s.pc)}</span>` : ''}
         <span>&#128337; ${esc(s.s)} — ${esc(s.l)}</span>
@@ -666,7 +654,6 @@ function clearFilters() {
   document.getElementById('filter-series').value = '';
   document.getElementById('filter-audience').value = '';
   document.getElementById('filter-concern').value = '';
-  document.getElementById('filter-source').value = '';
   applyFilters();
 }
 
@@ -702,7 +689,6 @@ function openModal(idx) {
     <p><strong>Asset ID:</strong> <code>${esc(s.ai)}</code></p>
     ${s.pt ? `<p><strong>Passthrough:</strong> ${esc(s.pt)}</p>` : ''}
     <p><strong>Recording Duration:</strong> ${esc(s.rd)}</p>
-    <p><strong>Source:</strong> ${s.src === 'yt' ? 'YouTube Upload' : 'Mux Library'}</p>
     <p><a href="${esc(s.u)}" target="_blank" style="color:var(--accent)">Open in Mux Player &rarr;</a></p>
   `;
   document.getElementById('modal-details').innerHTML = details;
@@ -735,7 +721,6 @@ document.getElementById('filter-media').addEventListener('change', applyFilters)
 document.getElementById('filter-series').addEventListener('change', applyFilters);
 document.getElementById('filter-audience').addEventListener('change', applyFilters);
 document.getElementById('filter-concern').addEventListener('change', applyFilters);
-document.getElementById('filter-source').addEventListener('change', applyFilters);
 
 // Keyboard shortcut: Escape closes modal
 document.addEventListener('keydown', (e) => {
