@@ -307,6 +307,106 @@ select:focus { border-color: var(--accent); }
 }
 .modal-details { font-size: 13px; color: var(--text-dim); line-height: 1.8; }
 .modal-details strong { color: var(--text); }
+/* Flag button */
+.flag-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.flag-btn:hover { border-color: var(--orange); color: var(--orange); }
+.flag-btn.flagged { border-color: var(--orange); color: var(--orange); background: rgba(245,158,11,0.1); }
+.segment-card.is-flagged { border-left: 3px solid var(--orange); }
+/* Flag modal */
+.flag-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 1100;
+  justify-content: center;
+  align-items: center;
+}
+.flag-modal-overlay.active { display: flex; }
+.flag-modal {
+  background: var(--surface);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 480px;
+  padding: 24px;
+}
+.flag-modal h3 { font-size: 16px; margin-bottom: 4px; }
+.flag-modal .flag-segment-name { font-size: 13px; color: var(--text-dim); margin-bottom: 16px; }
+.flag-categories { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.flag-cat-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.flag-cat-btn:hover { border-color: var(--accent); }
+.flag-cat-btn.selected { border-color: var(--orange); background: rgba(245,158,11,0.08); }
+.flag-cat-btn .cat-icon { font-size: 16px; flex-shrink: 0; }
+.flag-cat-btn .cat-label { font-weight: 500; }
+.flag-cat-btn .cat-desc { font-size: 11px; color: var(--text-dim); }
+.flag-notes {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  outline: none;
+  margin-bottom: 16px;
+}
+.flag-notes:focus { border-color: var(--accent); }
+.flag-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.flag-cancel-btn {
+  padding: 8px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+.flag-cancel-btn:hover { background: var(--border); }
+.flag-submit-btn {
+  padding: 8px 20px;
+  background: var(--orange);
+  border: none;
+  border-radius: 6px;
+  color: #000;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.flag-submit-btn.enabled { opacity: 1; pointer-events: auto; }
+.flag-submit-btn.enabled:hover { background: #fbbf24; }
 /* Responsive */
 @media (max-width: 768px) {
   .controls { flex-direction: column; }
@@ -382,6 +482,7 @@ document.addEventListener("DOMContentLoaded", function() {
   <div class="stat"><strong id="stat-authors">0</strong> authors</div>
   <div class="stat"><strong id="stat-series">0</strong> series</div>
   <div class="stat"><strong id="stat-classified">0</strong> classified</div>
+  <div class="stat" style="color:var(--orange)"><strong id="stat-flagged" style="color:var(--orange)">0</strong> flagged</div>
 </div>
 
 <div class="controls">
@@ -447,6 +548,14 @@ document.addEventListener("DOMContentLoaded", function() {
       <option value="">All Topics</option>
     </select>
   </div>
+  <div class="filter-group">
+    <span class="filter-label">Flags</span>
+    <select id="filter-flagged">
+      <option value="">All</option>
+      <option value="flagged">Flagged Only</option>
+      <option value="unflagged">Unflagged Only</option>
+    </select>
+  </div>
   <button class="clear-btn" onclick="clearFilters()">Clear All</button>
 </div>
 
@@ -463,6 +572,37 @@ document.addEventListener("DOMContentLoaded", function() {
     <h2 id="modal-title"></h2>
     <iframe id="modal-video" class="modal-video" frameborder="0" allowfullscreen allow="autoplay; fullscreen"></iframe>
     <div class="modal-details" id="modal-details"></div>
+  </div>
+</div>
+
+<!-- Flag Modal -->
+<div class="flag-modal-overlay" id="flag-modal" onclick="closeFlagModal(event)">
+  <div class="flag-modal" onclick="event.stopPropagation()">
+    <h3>Flag Segment</h3>
+    <div class="flag-segment-name" id="flag-segment-name"></div>
+    <div class="flag-categories" id="flag-categories">
+      <button class="flag-cat-btn" data-cat="poor-audio" onclick="selectFlagCat(this)">
+        <span class="cat-icon">&#128263;</span>
+        <div><div class="cat-label">Poor Audio</div><div class="cat-desc">Audio quality issues — static, low volume, distortion</div></div>
+      </button>
+      <button class="flag-cat-btn" data-cat="misspelling" onclick="selectFlagCat(this)">
+        <span class="cat-icon">&#9999;&#65039;</span>
+        <div><div class="cat-label">Misspelling</div><div class="cat-desc">Title, description, or metadata has spelling/grammar errors</div></div>
+      </button>
+      <button class="flag-cat-btn" data-cat="wrong-classification" onclick="selectFlagCat(this)">
+        <span class="cat-icon">&#127991;&#65039;</span>
+        <div><div class="cat-label">Wrong Classification</div><div class="cat-desc">Audience or topic label is incorrect</div></div>
+      </button>
+      <button class="flag-cat-btn" data-cat="remove-segment" onclick="selectFlagCat(this)">
+        <span class="cat-icon">&#128465;&#65039;</span>
+        <div><div class="cat-label">Remove Segment</div><div class="cat-desc">This segment should be deleted from the index</div></div>
+      </button>
+    </div>
+    <textarea class="flag-notes" id="flag-notes" placeholder="Optional notes — describe the specific issue..."></textarea>
+    <div class="flag-actions">
+      <button class="flag-cancel-btn" onclick="closeFlagModal()">Cancel</button>
+      <button class="flag-submit-btn" id="flag-submit" onclick="submitFlag()">Create Issue</button>
+    </div>
   </div>
 </div>
 
@@ -545,6 +685,7 @@ function init() {
   document.getElementById('stat-authors').textContent = Object.keys(authorCounts).length.toLocaleString();
   document.getElementById('stat-series').textContent = Object.keys(seriesCounts).length.toLocaleString();
   document.getElementById('stat-classified').textContent = SEGMENTS.filter(s => s.ta && s.ta !== 'Unknown').length.toLocaleString();
+  updateFlagCount();
 
   applyFilters();
 }
@@ -558,8 +699,10 @@ function applyFilters() {
   const seriesFilter = document.getElementById('filter-series').value;
   const audienceFilter = document.getElementById('filter-audience').value;
   const concernFilter = document.getElementById('filter-concern').value;
+  const flaggedFilter = document.getElementById('filter-flagged').value;
 
   const queryTerms = query ? query.split(/\s+/) : [];
+  const flagStore = getFlagStore();
 
   filtered = SEGMENTS.filter(s => {
     if (typeFilter && s.st !== typeFilter) return false;
@@ -570,6 +713,8 @@ function applyFilters() {
     if (seriesFilter && s.sr !== seriesFilter) return false;
     if (audienceFilter && s.ta !== audienceFilter) return false;
     if (concernFilter && s.pc !== concernFilter) return false;
+    if (flaggedFilter === 'flagged' && !flagStore[s.ai + '_' + s.sn]) return false;
+    if (flaggedFilter === 'unflagged' && flagStore[s.ai + '_' + s.sn]) return false;
 
     if (queryTerms.length > 0) {
       const searchable = (
@@ -607,9 +752,10 @@ function renderResults() {
     const audClass = s.ta ? 'badge-aud-' + s.ta.toLowerCase().split(' ')[0] : '';
 
     html += `
-    <div class="segment-card">
+    <div class="segment-card${isFlagged(s) ? ' is-flagged' : ''}">
       <div class="card-header">
         <div class="card-title">${esc(s.t)}</div>
+        <button class="flag-btn${isFlagged(s) ? ' flagged' : ''}" onclick="openFlagModal(${i})" title="Flag this segment">${isFlagged(s) ? '&#9873; Flagged' : '&#9873; Flag'}</button>
         <a class="play-btn" href="${esc(s.u)}" target="_blank" onclick="event.preventDefault(); openModal(${i})">&#9654; Play</a>
       </div>
       <div class="card-meta">
@@ -654,6 +800,7 @@ function clearFilters() {
   document.getElementById('filter-series').value = '';
   document.getElementById('filter-audience').value = '';
   document.getElementById('filter-concern').value = '';
+  document.getElementById('filter-flagged').value = '';
   applyFilters();
 }
 
@@ -726,6 +873,107 @@ document.getElementById('filter-concern').addEventListener('change', applyFilter
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeModal();
 });
+
+// ── Flag System ──
+const GITHUB_REPO = 'cto-ms/dmu-segment-review';
+const FLAG_STORAGE_KEY = 'dmu-flagged-segments';
+
+function getFlagStore() {
+  try { return JSON.parse(localStorage.getItem(FLAG_STORAGE_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+function isFlagged(s) {
+  const key = s.ai + '_' + s.sn;
+  return !!getFlagStore()[key];
+}
+
+function markFlagged(s, category, notes) {
+  const store = getFlagStore();
+  const key = s.ai + '_' + s.sn;
+  store[key] = { category, notes, time: new Date().toISOString(), title: s.t };
+  localStorage.setItem(FLAG_STORAGE_KEY, JSON.stringify(store));
+  updateFlagCount();
+}
+
+function updateFlagCount() {
+  const count = Object.keys(getFlagStore()).length;
+  document.getElementById('stat-flagged').textContent = count.toLocaleString();
+}
+
+let flagTargetIdx = -1;
+let selectedFlagCat = '';
+
+function openFlagModal(idx) {
+  const s = filtered[idx];
+  flagTargetIdx = idx;
+  selectedFlagCat = '';
+  document.getElementById('flag-segment-name').textContent = s.t;
+  document.getElementById('flag-notes').value = '';
+  document.getElementById('flag-submit').classList.remove('enabled');
+  document.querySelectorAll('.flag-cat-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('flag-modal').classList.add('active');
+}
+
+function closeFlagModal(e) {
+  if (e && e.target !== document.getElementById('flag-modal')) return;
+  document.getElementById('flag-modal').classList.remove('active');
+  flagTargetIdx = -1;
+}
+
+function selectFlagCat(btn) {
+  document.querySelectorAll('.flag-cat-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedFlagCat = btn.dataset.cat;
+  document.getElementById('flag-submit').classList.add('enabled');
+}
+
+const FLAG_LABELS = {
+  'poor-audio': 'Poor Audio',
+  'misspelling': 'Misspelling',
+  'wrong-classification': 'Wrong Classification',
+  'remove-segment': 'Remove Segment'
+};
+
+function submitFlag() {
+  if (!selectedFlagCat || flagTargetIdx < 0) return;
+  const s = filtered[flagTargetIdx];
+  const notes = document.getElementById('flag-notes').value.trim();
+  const label = FLAG_LABELS[selectedFlagCat];
+
+  // Build GitHub Issue
+  const title = `[${label}] ${s.t}`;
+  const body = [
+    `**Segment:** ${s.t}`,
+    `**Author:** ${s.a || 'Unknown'}`,
+    `**Series:** ${s.sr || 'Unknown'}`,
+    `**Asset ID:** \`${s.ai}\``,
+    `**Segment #:** ${s.sn || 'N/A'}`,
+    `**Start:** ${s.s}  **Length:** ${s.l}`,
+    `**Audience:** ${s.ta || 'Unknown'}  **Topic:** ${s.pc || 'N/A'}`,
+    `**Playback:** [Open in Mux](${s.u})`,
+    '',
+    `**Issue Type:** ${label}`,
+    notes ? `\n**Notes:**\n${notes}` : '',
+  ].filter(Boolean).join('\n');
+
+  const issueUrl = `https://github.com/${GITHUB_REPO}/issues/new?` + new URLSearchParams({
+    title: title,
+    body: body,
+    labels: selectedFlagCat
+  }).toString();
+
+  // Save locally
+  markFlagged(s, selectedFlagCat, notes);
+
+  // Open GitHub Issue in new tab
+  window.open(issueUrl, '_blank');
+
+  closeFlagModal();
+  renderResults();
+}
+
+document.getElementById('filter-flagged').addEventListener('change', applyFilters);
 
 // Expose for auth gate
 function initApp() { init(); }
