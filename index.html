@@ -407,6 +407,73 @@ select:focus { border-color: var(--accent); }
 }
 .flag-submit-btn.enabled { opacity: 1; pointer-events: auto; }
 .flag-submit-btn.enabled:hover { background: #fbbf24; }
+/* Author bio/photo */
+.author-info {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: rgba(59,130,246,0.04);
+  border: 1px solid rgba(59,130,246,0.1);
+  border-radius: 8px;
+}
+.author-photo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid var(--border);
+}
+.author-photo-lg {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid var(--border);
+}
+.author-details {
+  flex: 1;
+  min-width: 0;
+}
+.author-name-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  cursor: pointer;
+}
+.author-name-link:hover { text-decoration: underline; }
+.author-bio-preview {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-top: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.modal-author-section {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: rgba(59,130,246,0.04);
+  border: 1px solid rgba(59,130,246,0.1);
+  border-radius: 10px;
+}
+.modal-author-bio {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.7;
+  margin-top: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
 /* Responsive */
 @media (max-width: 768px) {
   .controls { flex-direction: column; }
@@ -482,6 +549,7 @@ document.addEventListener("DOMContentLoaded", function() {
   <div class="stat"><strong id="stat-authors">0</strong> authors</div>
   <div class="stat"><strong id="stat-series">0</strong> series</div>
   <div class="stat"><strong id="stat-classified">0</strong> classified</div>
+  <div class="stat"><strong id="stat-bios">0</strong> with bio</div>
   <div class="stat" style="color:var(--orange)"><strong id="stat-flagged" style="color:var(--orange)">0</strong> flagged</div>
 </div>
 
@@ -695,6 +763,7 @@ function init() {
   document.getElementById('stat-authors').textContent = Object.keys(authorCounts).length.toLocaleString();
   document.getElementById('stat-series').textContent = Object.keys(seriesCounts).length.toLocaleString();
   document.getElementById('stat-classified').textContent = SEGMENTS.filter(s => s.ta && s.ta !== 'Unknown').length.toLocaleString();
+  document.getElementById('stat-bios').textContent = SEGMENTS.filter(s => s.bio).length.toLocaleString();
   updateFlagCount();
 
   applyFilters();
@@ -785,6 +854,14 @@ function renderResults() {
         ${people.slice(0, 3).map(p => `<span class="tag tag-person">${esc(p)}</span>`).join('')}
       </div>
       ${s.sa ? `<div class="card-row"><strong>Subject:</strong> ${esc(s.sa)}</div>` : ''}
+      ${(s.bio || s.pf) && s.a && s.a !== 'Unknown' ? `
+      <div class="author-info">
+        ${s.pf ? `<img class="author-photo" src="biographies/${encodeURIComponent(s.pf)}" alt="${esc(s.a)}" onerror="this.style.display='none'">` : ''}
+        <div class="author-details">
+          <span class="author-name-link" onclick="openAuthorBio(${i})">${esc(s.a)}</span>
+          ${s.bio ? `<div class="author-bio-preview">${esc(s.bio)}</div>` : ''}
+        </div>
+      </div>` : ''}
     </div>`;
   });
 
@@ -824,6 +901,7 @@ function openModal(idx) {
 
   // Use Mux iframe embed
   const iframe = document.getElementById('modal-video');
+  iframe.style.display = '';
   iframe.src = `https://stream.mux.com/${s.p}#t=${startSec}`;
 
   const skills = s.sk ? s.sk.split(';').map(x => x.trim()).filter(Boolean) : [];
@@ -831,6 +909,15 @@ function openModal(idx) {
   const people = s.pr ? s.pr.split(';').map(x => x.trim()).filter(Boolean) : [];
 
   let details = `
+    ${(s.bio || s.pf) && s.a && s.a !== 'Unknown' ? `
+    <div class="modal-author-section">
+      ${s.pf ? `<img class="author-photo-lg" src="biographies/${encodeURIComponent(s.pf)}" alt="${esc(s.a)}" onerror="this.style.display='none'">` : ''}
+      <div class="author-details">
+        <div style="font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px;">${esc(s.a)}</div>
+        ${s.bio ? `<div class="modal-author-bio">${esc(s.bio)}</div>` : ''}
+        ${s.bf ? `<div style="margin-top:6px; font-size:11px;"><a href="biographies/${encodeURIComponent(s.bf)}" target="_blank" style="color:var(--accent);">View bio file</a></div>` : ''}
+      </div>
+    </div>` : ''}
     <p><strong>Start:</strong> ${esc(s.s)} &nbsp; <strong>Length:</strong> ${esc(s.l)} &nbsp; <strong>Ends:</strong> ${esc(s.e)}</p>
     <p><strong>Type:</strong> ${esc(s.st)} &nbsp; <strong>Content:</strong> ${esc(s.ct)}</p>
     ${s.a ? `<p><strong>Author:</strong> ${esc(s.a)}</p>` : ''}
@@ -865,6 +952,27 @@ function esc(str) {
   return d.innerHTML;
 }
 
+function openAuthorBio(idx) {
+  const s = filtered[idx];
+  document.getElementById('modal-title').textContent = s.a || 'Author';
+  document.getElementById('modal-video').src = '';
+  document.getElementById('modal-video').style.display = 'none';
+
+  let details = `
+    <div class="modal-author-section" style="flex-direction:column; align-items:center; text-align:center;">
+      ${s.pf ? `<img class="author-photo-lg" style="width:120px; height:120px;" src="biographies/${encodeURIComponent(s.pf)}" alt="${esc(s.a)}" onerror="this.style.display='none'">` : ''}
+      <div class="author-details" style="text-align:left; width:100%;">
+        <div style="font-size:16px; font-weight:600; color:var(--text); margin-bottom:8px; text-align:center;">${esc(s.a)}</div>
+        ${s.bio ? `<div style="font-size:13px; color:var(--text-dim); line-height:1.7; white-space:pre-wrap;">${esc(s.bio)}</div>` : '<p style="color:var(--text-dim);">No biography available.</p>'}
+        ${s.bf ? `<div style="margin-top:10px; font-size:12px;"><a href="biographies/${encodeURIComponent(s.bf)}" target="_blank" style="color:var(--accent);">View bio source file</a></div>` : ''}
+        ${s.pf ? `<div style="margin-top:4px; font-size:12px;"><a href="biographies/${encodeURIComponent(s.pf)}" target="_blank" style="color:var(--accent);">View full photo</a></div>` : ''}
+      </div>
+    </div>`;
+  document.getElementById('modal-details').innerHTML = details;
+  document.getElementById('modal').classList.add('active');
+}
+
+// Restore video iframe when opening a normal modal
 // Debounced search
 let searchTimer;
 document.getElementById('search').addEventListener('input', () => {
