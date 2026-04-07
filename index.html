@@ -627,6 +627,18 @@ document.addEventListener("DOMContentLoaded", function() {
     </select>
   </div>
   <div class="filter-group">
+    <span class="filter-label">Recording Length</span>
+    <select id="filter-duration">
+      <option value="">All Lengths</option>
+      <option value="0-15">Under 15 min</option>
+      <option value="15-30">15–30 min</option>
+      <option value="30-45">30–45 min</option>
+      <option value="45-60">45–60 min</option>
+      <option value="60-90">60–90 min</option>
+      <option value="90+">Over 90 min</option>
+    </select>
+  </div>
+  <div class="filter-group">
     <span class="filter-label">Flags</span>
     <select id="filter-flagged">
       <option value="">All</option>
@@ -778,6 +790,7 @@ function applyFilters() {
   const seriesFilter = document.getElementById('filter-series').value;
   const audienceFilter = document.getElementById('filter-audience').value;
   const concernFilter = document.getElementById('filter-concern').value;
+  const durationFilter = document.getElementById('filter-duration').value;
   const flaggedFilter = document.getElementById('filter-flagged').value;
 
   const queryTerms = query ? query.split(/\s+/) : [];
@@ -792,6 +805,16 @@ function applyFilters() {
     if (seriesFilter && s.sr !== seriesFilter) return false;
     if (audienceFilter && s.ta !== audienceFilter) return false;
     if (concernFilter && s.pc !== concernFilter) return false;
+    if (durationFilter && s.rd) {
+      const dp = s.rd.split(':').map(Number);
+      const totalMin = (dp.length === 3 ? dp[0] * 60 + dp[1] : dp[0]) + (dp.length === 3 ? dp[2] : dp[1] || 0) / 60;
+      if (durationFilter === '0-15' && totalMin >= 15) return false;
+      if (durationFilter === '15-30' && (totalMin < 15 || totalMin >= 30)) return false;
+      if (durationFilter === '30-45' && (totalMin < 30 || totalMin >= 45)) return false;
+      if (durationFilter === '45-60' && (totalMin < 45 || totalMin >= 60)) return false;
+      if (durationFilter === '60-90' && (totalMin < 60 || totalMin >= 90)) return false;
+      if (durationFilter === '90+' && totalMin < 90) return false;
+    }
     if (flaggedFilter === 'flagged' && !flagStore[s.ai + '_' + s.sn]) return false;
     if (flaggedFilter === 'unflagged' && flagStore[s.ai + '_' + s.sn]) return false;
 
@@ -887,6 +910,7 @@ function clearFilters() {
   document.getElementById('filter-series').value = '';
   document.getElementById('filter-audience').value = '';
   document.getElementById('filter-concern').value = '';
+  document.getElementById('filter-duration').value = '';
   document.getElementById('filter-flagged').value = '';
   applyFilters();
 }
@@ -1091,6 +1115,7 @@ function submitFlag() {
   renderResults();
 }
 
+document.getElementById('filter-duration').addEventListener('change', applyFilters);
 document.getElementById('filter-flagged').addEventListener('change', applyFilters);
 
 // Expose for auth gate
