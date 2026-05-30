@@ -247,6 +247,26 @@ select:focus { border-color: var(--accent); }
   margin-top: 6px;
 }
 .card-row strong { color: var(--text); font-weight: 500; }
+.card-ids {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 8px;
+  font-size: 11px;
+}
+.card-ids .id-item { display: inline-flex; align-items: center; gap: 6px; }
+.card-ids .id-label { color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }
+.card-ids code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  border-radius: 4px;
+  user-select: all;
+  word-break: break-all;
+}
 .load-more {
   display: block;
   width: 100%;
@@ -555,7 +575,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 <div class="controls">
   <div class="search-box">
-    <input type="text" id="search" placeholder="Search topics, skills, concepts, people, descriptions..." autocomplete="off">
+    <input type="text" id="search" placeholder="Search topics, skills, concepts, people, descriptions, asset ID, playback ID..." autocomplete="off">
   </div>
   <div class="filter-group">
     <span class="filter-label">Segment Type</span>
@@ -820,7 +840,7 @@ function applyFilters() {
 
     if (queryTerms.length > 0) {
       const searchable = (
-        s.t + ' ' + s.d + ' ' + s.sk + ' ' + s.c + ' ' + s.pr + ' ' + s.sa + ' ' + s.a + ' ' + s.sr
+        s.t + ' ' + s.d + ' ' + s.sk + ' ' + s.c + ' ' + s.pr + ' ' + s.sa + ' ' + s.a + ' ' + s.sr + ' ' + (s.p || '') + ' ' + (s.ai || '')
       ).toLowerCase();
       return queryTerms.every(term => searchable.includes(term));
     }
@@ -877,6 +897,10 @@ function renderResults() {
         ${people.slice(0, 3).map(p => `<span class="tag tag-person">${esc(p)}</span>`).join('')}
       </div>
       ${s.sa ? `<div class="card-row"><strong>Subject:</strong> ${esc(s.sa)}</div>` : ''}
+      <div class="card-ids">
+        <span class="id-item"><span class="id-label">Asset ID</span><code>${esc(s.ai || '—')}</code></span>
+        <span class="id-item"><span class="id-label">Playback ID</span><code>${esc(s.p || '—')}</code></span>
+      </div>
       ${(s.bio || s.pf) && s.a && s.a !== 'Unknown' ? `
       <div class="author-info">
         ${s.pf ? `<img class="author-photo" src="biographies/${encodeURIComponent(s.pf)}" alt="${esc(s.a)}" onerror="this.style.display='none'">` : ''}
